@@ -37,6 +37,17 @@ Geliştirme ortamında iki Mini Talon modeli kullanılır:
 > [!NOTE]
 > **Bu depo bir kaynak kod portföyüdür.** Projenin seçilmiş algoritmalarını, ROS servislerini, arayüz bileşenlerini ve simülasyon betiklerini içerir. Tam çalışan uygulamanın bütün dosyalarını veya eğitilmiş modeli içerdiği iddia edilmez.
 
+
+## Arayüz Önizlemesi
+
+VISTRALOCK'un PyQt5 tabanlı yerel kontrol arayüzü, kamera görüntüsü ile hedef takip ve uçuş bilgilerini tek ekranda birleştirir.
+
+![VISTRALOCK kontrol arayüzü – kamera, ROI ve hedef takip bilgileri](docs/arayuz.png)
+
+Arayüzde canlı kamera görüntüsü, hedef tespit kutuları, sarı **ROI (Region of Interest)**, **4 saniyelik görsel kilitlenme ilerlemesi**, hedef bilgileri, uçuş telemetrisi ve İHA kontrol bileşenleri bulunur.
+
+> **Not:** Görsel yerel uygulamanın arayüzünü gösterir. Tam dashboard ve YOLO çalıştırma modülleri bu kaynak kod portföyünde paylaşılmamıştır.
+
 ## Temel Yetkinlikler
 
 | Alan | Geliştirilen işlev |
@@ -185,6 +196,8 @@ Buradaki `track_id: 12`, bir **görüntü takip numarasıdır**; `ID 1` veya `ID
 vistralock/
 ├── .gitignore
 ├── README.md
+├── docs/
+│   └── arayuz.png                   # Yerel kontrol arayüzünün ekran görüntüsü
 ├── auto_takeoff.py                  # Simülasyonda otomatik kalkış
 ├── takeoff_all.sh                  # Çoklu İHA simülasyonunu başlatma
 ├── stop_talon.sh                  # Simülasyon süreçlerini durdurma
