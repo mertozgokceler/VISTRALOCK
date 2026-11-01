@@ -94,3 +94,4 @@ mav.parm
 mav_*.parm
 mav.tlog
 mav.tlog.raw*.pt
+tracking/ui/widgets/tactical_map.py
