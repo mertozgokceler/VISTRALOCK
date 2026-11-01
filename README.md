@@ -33,7 +33,7 @@ Geliştirme ortamında iki Mini Talon modeli kullanılır:
 | **ID 2** | `mini_talon_2` | Kendi İHA'mız; kamera ve takip kontrolü |
 
 > [!NOTE]
-> **Bu depo bir kaynak kod portföyüdür.** Projenin seçilmiş algoritmalarını, kontrol modüllerini ve simülasyon betiklerini içerir. Tam çalışan uygulamanın bütün dosyalarını veya eğitilmiş modeli içerdiği iddia edilmez.
+> **Bu depo bir kaynak kod portföyüdür.** Projenin seçilmiş algoritmalarını, ROS servislerini, arayüz bileşenlerini ve simülasyon betiklerini içerir. Tam çalışan uygulamanın bütün dosyalarını veya eğitilmiş modeli içerdiği iddia edilmez.
 
 ## Temel Yetkinlikler
 
@@ -182,40 +182,51 @@ Buradaki `track_id: 12`, bir **görüntü takip numarasıdır**; `ID 1` veya `ID
 ```text
 uavtracklock/
 ├── .gitignore
-├── auto_takeoff.py                 # Simülasyonda otomatik kalkış akışı
-├── takeoff_all.sh                 # Çoklu İHA simülasyon başlangıcı
-├── stop_talon.sh                 # Simülasyon süreçlerini durdurma
-├── throttle_bridge.py            # Kontrol/simülasyon köprüsü
-├── talon_defaults.parm           # ArduPlane başlangıç parametreleri
+├── README.md
+├── auto_takeoff.py                  # Simülasyonda otomatik kalkış
+├── takeoff_all.sh                  # Çoklu İHA simülasyonunu başlatma
+├── stop_talon.sh                  # Simülasyon süreçlerini durdurma
+├── throttle_bridge.py             # Kontrol ve simülasyon köprüsü
+├── talon_defaults.parm            # ArduPlane başlangıç parametreleri
 └── tracking/
-    ├── controllers/              # Hedef edinme, takip ve kilit mantığı
+    ├── main.py                     # Yerel uygulama giriş noktası
+    ├── read_aircraft.py            # Uçak verilerini okuma
+    ├── controllers/                # Hedef edinme, takip ve kilit mantığı
     │   ├── acquire_controller.py
     │   ├── target_lock_controller.py
     │   ├── tracking_controller.py
     │   └── visual_tracking_controller.py
-    ├── managers/                 # Takip durumları ve iş akışı yönetimi
+    ├── managers/                   # Takip durumu ve iş akışı yönetimi
     │   ├── tracking_manager.py
     │   └── visual_tracking_manager.py
-    ├── models/                   # Uçak durumları ve takip metrikleri
+    ├── models/                     # Uçak durumları ve takip metrikleri
     │   ├── aircraft_state.py
     │   └── tracking_metrics.py
-    ├── read_aircraft.py
-    ├── services/                 # ROS veri sağlayıcıları ve uçak kontrolü
+    ├── services/                   # ROS veri sağlayıcıları ve kontrol
     │   ├── ownship_control_service.py
     │   ├── ros_aircraft_provider.py
+    │   ├── ros_camera_provider.py
+    │   ├── ros_detection_provider.py
     │   └── ros_multi_aircraft_provider.py
-    └── ui/widgets/
-        └── ownship_control_panel.py
+    └── ui/
+        └── widgets/               # PyQt5 arayüz bileşenleri
+            ├── active_tracking_panel.py
+            ├── camera_feed.py
+            ├── candidate_panel.py
+            ├── online_indicator.py
+            ├── ownship_control_panel.py
+            ├── status_badge.py
+            └── target_info_panel.py
 ```
 
-> Yapı, ilk portföy paylaşımındaki ana dosyaları gösterir. Paket tanımları (`__init__.py`) sade görünüm için listelenmemiştir.
+> Bu liste, GitHub portföyüne eklenen kaynak kodlarını gösterir. `__init__.py` dosyaları görünümü sadeleştirmek için listelenmemiştir. `tactical_map.py`, YOLO dedektörü, YOLO süreç servisi, tam dashboard ve `.pt` model ağırlıkları bu paylaşımda yer almaz.
 
 ## Depo Kapsamı ve Sınırlamalar
 
 Bu GitHub deposunun amacı, **mühendislik yaklaşımımı ve geliştirdiğim kaynak kodları incelemeye açmaktır**. Bu nedenle depo:
 
 - Hedef takibi, kilitlenme ve durum yönetimi algoritmalarını içerir.
-- Uçuş simülasyonu ve kontrol bileşenlerinden seçilmiş kaynak kodları içerir.
+- Uçuş simülasyonu, ROS veri sağlayıcıları, kontrol ve PyQt5 arayüz bileşenlerinden seçilmiş kaynak kodları içerir.
 - **Eğitilmiş YOLO model ağırlıklarını (`.pt`) ve eğitim veri setlerini içermez.**
 - Yerel uygulamanın tam PyQt5 dashboard'unu ve YOLO çalıştırma servislerini içermez.
 - Tek başına kurulabilir, eksiksiz veya çalıştırılması doğrulanmış bir ürün olarak sunulmaz.
