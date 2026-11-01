@@ -1,10 +1,12 @@
 <div align="center">
 
-# UAVTrackLock
+# VISTRALOCK
 
 ### Gerçek Zamanlı İHA Hedef Takibi ve Görsel Kilitlenme Sistemi
 
 **Real-Time UAV Target Tracking & Visual Lock-On System**
+
+**Vision · Tracking · Lock-On**
 
 *ROS, Gazebo ve ArduPilot SITL üzerinde geliştirilen; hedef seçimi, görüntü tabanlı takip ve koşula bağlı kilitlenme mantığını bir araya getiren modüler bir İHA yazılım projesi.*
 
@@ -21,7 +23,7 @@
 
 ## Proje Hakkında
 
-**UAVTrackLock**, simülasyon ortamındaki bir İHA'nın diğer hava aracını belirlemesi, uygun hedefi seçmesi, kamera görüntüsünden takip etmesi ve tanımlı şartlar sağlandığında **görsel kilitlenme** gerçekleştirmesi için geliştirilen bir sistemdir.
+**VISTRALOCK**, simülasyon ortamındaki bir İHA'nın diğer hava aracını belirlemesi, uygun hedefi seçmesi, kamera görüntüsünden takip etmesi ve tanımlı şartlar sağlandığında **görsel kilitlenme** gerçekleştirmesi için geliştirilen bir sistemdir.
 
 Proje yalnızca görüntü üzerinde nesne kutusu çizmeye odaklanmaz. **Uçuş verisi, hedef yönetimi, görüntü tabanlı takip ve kontrol komutları** arasındaki veri akışını birlikte ele alır.
 
@@ -180,7 +182,7 @@ Buradaki `track_id: 12`, bir **görüntü takip numarasıdır**; `ID 1` veya `ID
 ## Depodaki Kod Yapısı
 
 ```text
-uavtracklock/
+vistralock/
 ├── .gitignore
 ├── README.md
 ├── auto_takeoff.py                  # Simülasyonda otomatik kalkış
@@ -252,7 +254,7 @@ Bu depoda **açık kaynak lisansı bulunmamaktadır (No License)**. Kodların Gi
 
 <div align="center">
 
-**UAVTrackLock** · Computer Vision · UAV Systems · ROS · Autonomous Tracking
+**VISTRALOCK** · Computer Vision · UAV Systems · ROS · Autonomous Tracking
 
 *Bir tespit kutusundan daha fazlası: hedef yönetimi, görsel takip ve karar mantığı.*
 
