@@ -56,7 +56,7 @@ class ActiveTrackingPanel(QFrame):
         """)
 
         self.stop_button = QPushButton(
-            "TAKIBI BIRAK"
+            "STOP TRACKING"
         )
 
         self.stop_button.setFixedHeight(
@@ -105,7 +105,7 @@ class ActiveTrackingPanel(QFrame):
     ):
 
         self.status_label.setText(
-            f"●  ID {target_id} TAKIP EDILIYOR"
+            f"●  ID {target_id} FOLLOWING"
         )
 
         self.show()

@@ -61,7 +61,7 @@ class CandidatePanel(QFrame):
         """)
 
         self.info_label = QLabel(
-            "ID 1 takip için uygun olabilir."
+            "ID 1 may suitable for tracking."
         )
 
         self.info_label.setStyleSheet("""
@@ -112,11 +112,11 @@ class CandidatePanel(QFrame):
         )
 
         self.accept_button = QPushButton(
-            "TAKIBI BASLAT"
+            "START TRACKING"
         )
 
         self.reject_button = QPushButton(
-            "REDDET"
+            "CANCEL"
         )
 
         self.accept_button.setFixedHeight(
@@ -239,17 +239,17 @@ class CandidatePanel(QFrame):
     ):
 
         self.distance_box.setText(
-            "MESAFE\n"
+            "DISTANCE\n"
             f"{metrics.distance:.1f} m"
         )
 
         self.suitability_box.setText(
-            "UYGUNLUK\n"
+            "SUITIBILITY\n"
             f"{metrics.suitability_score:.1f} %"
         )
 
         self.direction_box.setText(
-            "YON\n"
+            "DIRECTION\n"
             f"{metrics.horizontal_direction}"
         )
 

@@ -1,3 +1,5 @@
+import time
+
 from PyQt5.QtCore import QObject, pyqtSignal
 
 
@@ -5,7 +7,7 @@ class VisualTrackingManager(QObject):
 
     detections_updated = pyqtSignal(object)
     status_changed = pyqtSignal(str)
-    # Real 4-second ROI lock progress; separate from initial target acquisition.
+
     lock_progress_updated = pyqtSignal(float, bool)
 
     def __init__(
@@ -31,9 +33,16 @@ class VisualTrackingManager(QObject):
 
         self.frame_size_provider = frame_size_provider
 
+
+        self.reacquire_status_delay_seconds = 1.0
+        self._missing_since = None
+        self._reacquire_shown = False
+
     def handle_detections(self, detections):
 
         if not self.yolo_service.is_running():
+            self._missing_since = None
+            self._reacquire_shown = False
             self.target_lock_controller.reset_roi_lock()
             self.detections_updated.emit([])
             self.lock_progress_updated.emit(0.0, False)
@@ -42,11 +51,15 @@ class VisualTrackingManager(QObject):
         self.detections_updated.emit(detections)
 
         if self.geofence_manager.return_active:
+            self._missing_since = None
+            self._reacquire_shown = False
             self.target_lock_controller.reset_roi_lock()
             self.lock_progress_updated.emit(0.0, False)
             return
 
         if self.tracking_manager.active_target_id is None:
+            self._missing_since = None
+            self._reacquire_shown = False
             self.target_lock_controller.reset_roi_lock()
             self.lock_progress_updated.emit(0.0, False)
             return
@@ -92,58 +105,46 @@ class VisualTrackingManager(QObject):
         )
 
     def _handle_lock_event(self, result):
-
         event = result["event"]
 
-        if event == "LOCKED":
-            self.acquire_controller.stop()
-            self.visual_tracking_controller.start()
 
-            self.status_changed.emit(
-                "VISUAL TRACKING"
-            )
+        if event in ("LOCKED", "TRACKING", "REACQUIRED"):
+            self._missing_since = None
 
-            print(
-                "VISUAL TARGET LOCKED:",
-                result["track_id"],
-            )
+            if event == "LOCKED":
+                self.acquire_controller.stop()
+                self.visual_tracking_controller.start()
+                self.status_changed.emit("VISUAL TRACKING")
+                self._reacquire_shown = False
+                print("VISUAL TARGET LOCKED:", result["track_id"])
 
-        elif event == "LOST":
-
-            if result.get("neutralize", False):
-
-                self.status_changed.emit(
-                    "REACQUIRE"
-                )
-
+            elif event == "REACQUIRED":
+                self.status_changed.emit("VISUAL TRACKING")
+                self._reacquire_shown = False
                 print(
-                    "VISUAL TARGET LOST:",
-                    result["track_id"],
+                    "VISUAL TARGET REACQUIRED:",
+                    result.get("old_track_id"), "->", result["track_id"],
                 )
 
-        elif event == "REACQUIRING":
+            elif self._reacquire_shown:
 
-            self.status_changed.emit(
-                "REACQUIRE"
-            )
+                self.status_changed.emit("VISUAL TRACKING")
+                self._reacquire_shown = False
+            return
 
-            print(
-                "REACQUIRE CANDIDATE:",
-                result.get("candidate_id"),
-            )
+        if event in ("LOST", "REACQUIRING"):
+            if self._missing_since is None:
+                self._missing_since = time.monotonic()
 
-        elif event == "REACQUIRED":
+            if (
+                not self._reacquire_shown
+                and time.monotonic() - self._missing_since
+                >= self.reacquire_status_delay_seconds
+            ):
 
-            self.status_changed.emit(
-                "VISUAL TRACKING"
-            )
-
-            print(
-                "VISUAL TARGET REACQUIRED:",
-                result.get("old_track_id"),
-                "->",
-                result["track_id"],
-            )
+                self.status_changed.emit("REACQUIRE")
+                self._reacquire_shown = True
+                print("VISUAL TARGET LOST (1 s):", result.get("track_id"))
 
     def _send_visual_control(
         self,
@@ -195,6 +196,9 @@ class VisualTrackingManager(QObject):
         )
 
     def stop(self):
+
+        self._missing_since = None
+        self._reacquire_shown = False
 
         self.target_lock_controller.reset()
         self.visual_tracking_controller.stop()

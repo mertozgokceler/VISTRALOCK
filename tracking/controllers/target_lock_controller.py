@@ -39,6 +39,9 @@ class TargetLockController:
         self.lock_hits = 0
         self.reacquire_candidate_id = None
         self.reacquire_hits = 0
+
+        self._last_confirmed_track_at = None
+        self._visual_continuity_hits = 0
         self.reset_roi_lock()
 
     def reset_success_history(self):
@@ -115,15 +118,19 @@ class TargetLockController:
         }
 
     def update(self, detections, image_width, image_height, aircraft_id=None):
-        valid_detections = [
+        bbox_detections = [
             d for d in (detections or [])
-            if isinstance(d, dict) and d.get('track_id') is not None
+            if isinstance(d, dict)
             and isinstance(d.get('bbox'), (tuple, list)) and len(d['bbox']) == 4
+        ]
+        valid_detections = [
+            d for d in bbox_detections if d.get('track_id') is not None
         ]
         if self.active_track_id is None:
             result = self.handle_initial_lock(valid_detections, image_width, image_height)
         else:
-            result = self.handle_locked_target(valid_detections)
+
+            result = self.handle_locked_target(bbox_detections)
 
         return self._update_roi_progress(
             result, image_width, image_height,
@@ -152,9 +159,11 @@ class TargetLockController:
         self.lock_hits = 0
         self.lost_frames = 0
         self.update_last_target(candidate)
+        self._last_confirmed_track_at = time.monotonic()
         return self._result('LOCKED', candidate, self.active_track_id, True)
 
     def handle_locked_target(self, detections):
+
         target_detection = None
         for detection in detections:
             if detection.get('track_id') != self.active_track_id:
@@ -168,19 +177,78 @@ class TargetLockController:
             self.lost_frames = 0
             self.reacquire_candidate_id = None
             self.reacquire_hits = 0
+            self._visual_continuity_hits = 0
+            self._last_confirmed_track_at = time.monotonic()
             self.update_last_target(target_detection)
             return self._result('TRACKING', target_detection, self.active_track_id)
 
         self.lost_frames += 1
         neutralize = self.lost_frames == self.lost_neutralize_frames
-        if self.lost_frames < self.reacquire_after_frames:
-            return self._result('LOST', track_id=self.active_track_id, neutralize=neutralize)
 
-        candidate = self.find_reacquire_candidate(detections)
+
+        last_seen = self._last_confirmed_track_at
+        recent = last_seen is not None and time.monotonic() - last_seen <= 0.8
+        if recent and self.last_bbox is not None:
+
+            nearby = [
+                d for d in detections
+                if self._similar_recent_box(self.last_bbox, d['bbox']) is not None
+            ]
+            if len(nearby) == 1:
+                candidate = nearby[0]
+
+                self.update_last_target(candidate)
+                new_id = candidate.get('track_id')
+                if new_id is None:
+
+                    return self._result(
+                        'LOST', track_id=self.active_track_id,
+                        neutralize=neutralize,
+                    )
+                self._visual_continuity_hits += 1
+                self.reacquire_candidate_id = new_id
+                if self._visual_continuity_hits >= 2:
+                    old_track_id = self.active_track_id
+                    self.active_track_id = new_id
+                    self.lost_frames = 0
+                    self.reacquire_candidate_id = None
+                    self.reacquire_hits = 0
+                    self._visual_continuity_hits = 0
+                    self._last_confirmed_track_at = time.monotonic()
+                    return self._result(
+                        'REACQUIRED', candidate, self.active_track_id,
+                        neutralize=neutralize, old_track_id=old_track_id,
+                    )
+                return self._result(
+                    'REACQUIRING', track_id=self.active_track_id,
+                    neutralize=neutralize, candidate_id=new_id,
+                )
+            if len(nearby) > 1:
+
+                self._visual_continuity_hits = 0
+                self.reacquire_candidate_id = None
+                self.reacquire_hits = 0
+                return self._result(
+                    'LOST', track_id=self.active_track_id,
+                    neutralize=neutralize,
+                )
+
+        self._visual_continuity_hits = 0
+
+        if self.lost_frames < self.reacquire_after_frames:
+            return self._result(
+                'LOST', track_id=self.active_track_id, neutralize=neutralize,
+            )
+
+        candidate = self.find_reacquire_candidate(
+            [d for d in detections if d.get('track_id') is not None]
+        )
         if candidate is None:
             self.reacquire_candidate_id = None
             self.reacquire_hits = 0
-            return self._result('LOST', track_id=self.active_track_id, neutralize=neutralize)
+            return self._result(
+                'LOST', track_id=self.active_track_id, neutralize=neutralize,
+            )
 
         candidate_id = candidate['track_id']
         if candidate_id == self.reacquire_candidate_id:
@@ -200,6 +268,7 @@ class TargetLockController:
         self.lost_frames = 0
         self.reacquire_candidate_id = None
         self.reacquire_hits = 0
+        self._last_confirmed_track_at = time.monotonic()
         self.update_last_target(candidate)
         return self._result(
             'REACQUIRED', candidate, self.active_track_id,

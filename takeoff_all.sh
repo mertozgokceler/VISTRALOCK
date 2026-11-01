@@ -8,6 +8,9 @@ LOGDIR="$HOME/talon_sim/logs"
 
 DEFAULTS="$HOME/talon_sim/talon_defaults.parm"
 
+# ID1: standard constant post-takeoff throttle command (1800 PWM).
+# ID2: smooth separation-based thrust control after both takeoffs.
+
 mkdir -p "$LOGDIR"
 
 mkdir -p "$HOME/talon_sim/plane1"
@@ -18,7 +21,7 @@ echo
 
 echo "=========================================="
 
-echo "        MINI TALON 2 UAV SYSTEM"
+echo "        VISTRALOCK - 2 UAV SYSTEM"
 
 echo "=========================================="
 
@@ -267,19 +270,27 @@ nohup bash -lc '
 
 source /opt/ros/noetic/setup.bash
 
-python3 -u $HOME/talon_sim/throttle_bridge.py \
+python3 -u "$HOME/talon_sim/throttle_bridge.py" \
 --model mini_talon_clean \
 --port 14600
 
 ' > "$LOGDIR/throttle1.log" 2>&1 &
 
+
 nohup bash -lc '
 
 source /opt/ros/noetic/setup.bash
 
-python3 -u $HOME/talon_sim/throttle_bridge.py \
+python3 -u "$HOME/talon_sim/throttle_bridge.py" \
 --model mini_talon_2 \
---port 14610
+--port 14610 \
+--pace-model mini_talon_clean \
+--desired-gap 25 \
+--lateral-limit 30 \
+--min-own-speed 15 \
+--max-own-speed 24 \
+--max-thrust-increase 0.50 \
+--max-thrust-reduction 0.25
 
 ' > "$LOGDIR/throttle2.log" 2>&1 &
 
@@ -325,8 +336,8 @@ echo
 python3 -u "$HOME/talon_sim/auto_takeoff.py" \
 --model mini_talon_2 \
 --window MAV2 \
---x -136 \
---y -22 \
+--x -126 \
+--y -18 \
 > "$LOGDIR/takeoff2.log" 2>&1 &
 
 PID2=$!
